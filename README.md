@@ -16,6 +16,7 @@ validated form flow.
 - **Filter** by All / Completed (segmented control).
 - **Local persistence** via Zustand `persist` + AsyncStorage — survives app restarts.
 - **Swipe-to-delete** rows with a confirming haptic and `FadeOutLeft` exit.
+- **Keyboard-aware form** — fields stay visible above the keyboard while editing.
 - **System light/dark theme** that follows the device color scheme.
 - **Hydration / empty / no-results states** with clear feedback.
 - **Subtle motion** — `FadeInDown` list entry, `withSpring` completion pop, `withTiming` FAB press.
@@ -35,7 +36,10 @@ validated form flow.
 | Animation    | React Native Reanimated v4 (+ `react-native-worklets`)                             |
 | Gestures     | `react-native-gesture-handler` (`ReanimatedSwipeable`)                             |
 | Forms        | React Hook Form + Zod (`@hookform/resolvers`)                                      |
-| Expo modules | `expo-haptics`, `expo-status-bar`, `expo-crypto`, `react-native-safe-area-context` |
+| Keyboard     | `react-native-keyboard-controller` (`KeyboardProvider`, `KeyboardAwareScrollView`) |
+| Icons        | `@expo/vector-icons` (Ionicons)                                                    |
+| Expo modules | `expo-haptics`, `expo-status-bar`, `expo-crypto`, `expo-splash-screen`, `react-native-safe-area-context` |
+| Testing      | Vitest                                                                              |
 
 ---
 
@@ -45,15 +49,16 @@ Layered and modular under `src/`, each layer with a single responsibility:
 
 ```
 src/
-├── App.tsx              # Providers: SafeArea → GestureHandlerRoot → NavigationContainer (themed)
+├── App.tsx              # Providers: GestureHandlerRoot → KeyboardProvider → SafeArea → NavigationContainer (themed)
 ├── types/               # Task, TaskStatus, TaskFilter, navigation param types
 ├── constants/           # storage key, filter options, limits, debounce
 ├── theme/               # light/dark palettes + spacing/radius/typography tokens
 ├── services/            # AsyncStorage adapter for the store
 ├── store/               # Zustand store (persist) + atomic selector hooks
 ├── hooks/               # useDebounce, useFilteredTasks (useMemo), useAppTheme
+├── utils/               # createId (expo-crypto randomUUID), formatDate
 ├── navigation/          # native-stack: Home, TaskForm
-├── components/          # TaskCard, SearchBar, StatusFilter, EmptyState, FloatingActionButton
+├── components/          # TaskCard, SearchBar, StatusFilter, EmptyState, FloatingActionButton, Header
 └── screens/             # HomeScreen (list), TaskFormScreen (create/edit)
 ```
 
@@ -135,8 +140,15 @@ terminal.
 ```bash
 npm run lint                          # ESLint (eslint-config-expo)
 npx tsc --noEmit                      # TypeScript, strict
+npm test                              # Vitest unit tests
 npx expo export --platform android    # full JS bundle smoke test
 ```
+
+### Tests
+
+Unit tests run on **Vitest** (`npm test`, or `npm run test:watch` for watch mode). Coverage targets
+the pure logic that doesn't need a native runtime — the Zustand store reducers
+(`src/store/taskStore.test.ts`) and the date formatter (`src/utils/date.test.ts`).
 
 ---
 
@@ -149,3 +161,5 @@ npx expo export --platform android    # full JS bundle smoke test
 | `npm run ios`     | Open on iOS               |
 | `npm run web`     | Open in the browser       |
 | `npm run lint`    | Lint the project          |
+| `npm test`        | Run unit tests (Vitest)   |
+| `npm run test:watch` | Run tests in watch mode |
